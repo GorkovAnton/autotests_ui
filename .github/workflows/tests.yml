@@ -1,0 +1,41 @@
+name: Autotests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Start system under test (учебный API)
+        run: |
+          python sut/server.py --port 5050 > sut.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:5050/health && break; sleep 1; done
+
+      - name: Run tests
+        env:
+          API_URL: http://127.0.0.1:5050
+          HEADLESS: "1"
+        run: pytest -n 4 --reruns 1 --alluredir=allure-results
+
+      - name: Upload Allure results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results
+          path: allure-results
+          retention-days: 14
