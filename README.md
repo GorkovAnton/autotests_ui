@@ -22,7 +22,11 @@ pytest -n auto                          # параллельно
 
 ### Отчёт о прогоне
 
-[![Allure Report](docs/screenshots/allure-overview.png)](https://gorkovanton.github.io/autotests_ui/)
+[Открыть отчёт Allure](https://gorkovanton.github.io/autotests_ui/)
+
+![Allure Report (скриншот)](docs/screenshots/allure-overview.png)
+
+
 
 В CI результаты сохраняются как артефакт `allure-results` (вкладка Actions → запуск → Artifacts).
 
