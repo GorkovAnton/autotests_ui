@@ -31,31 +31,55 @@ pipeline {
         }
 
         stage('Run tests') {
-            steps {
-                sh '''#!/bin/bash
-                    set -e
-                    . .venv/bin/activate
+    steps {
+        sh '''
+            . .venv/bin/activate
 
-                    python sut/server.py --port 5050 > sut.log 2>&1 &
-                    SUT_PID=$!
-                    trap 'kill $SUT_PID 2>/dev/null || true' EXIT
+            mkdir -p allure-results
 
-                    for i in $(seq 1 30); do
-                        curl -sf http://127.0.0.1:5050/health && break
-                        sleep 1
-                    done
-                    curl -sf http://127.0.0.1:5050/health > /dev/null
-
-                    pytest ${MARKER:+-m "$MARKER"} -n "$WORKERS" --reruns "$RERUNS" --alluredir=allure-results
-                '''
-            }
-        }
+            pytest ${MARKER:+-m "$MARKER"} \
+                -n "$WORKERS" \
+                --reruns "$RERUNS" \
+                --alluredir="$WORKSPACE/allure-results"
+        '''
+    }
+}
     }
 
     post {
-        always {
-            allure includeProperties: false, results: [[path: 'allure-results']]
-            archiveArtifacts artifacts: 'allure-results/**, sut.log', allowEmptyArchive: true
+    always {
+        script {
+            echo "Workspace: ${env.WORKSPACE}"
+
+            sh '''
+                echo "Checking Allure results..."
+                ls -lah "$WORKSPACE/allure-results" || true
+
+                echo "JSON files:"
+                find "$WORKSPACE/allure-results" \
+                    -maxdepth 1 -name '*-result.json' -type f || true
+            '''
+
+            def resultFiles = sh(
+                script: "find '$WORKSPACE/allure-results' -maxdepth 1 -name '*-result.json' -type f | wc -l",
+                returnStdout: true
+            ).trim().toInteger()
+
+            if (resultFiles > 0) {
+                allure(
+                    includeProperties: false,
+                    results: [[path: 'allure-results']]
+                )
+            } else {
+                echo "No Allure test results found. Skipping report."
+            }
         }
+
+        archiveArtifacts(
+            artifacts: 'allure-results/**, sut.log',
+            allowEmptyArchive: true
+        )
     }
 }
+}
+
