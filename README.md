@@ -7,6 +7,7 @@
 - **Allure Report**
 - **pytest-xdist** 
 - **GitHub Actions**
+- **Jenkinsfile**
 
 ## Запуск локально
 
@@ -19,5 +20,10 @@ pytest -m "ui and smoke" --headless     # UI smoke без окна браузе�
 pytest -n auto                          # параллельно
 ```
 
+### Отчёт о прогоне
+
+[![Allure Report](docs/screenshoots/allure-test_cases.png)](https://gorkovanton.github.io/autotests_ui/)
 
 В CI результаты сохраняются как артефакт `allure-results` (вкладка Actions → запуск → Artifacts).
+
+Настроен Jenkinsfile для запуска автотестов в Jenkins.
